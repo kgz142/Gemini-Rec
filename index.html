@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- <link rel="stylesheet" href="/gemini-ai/src/assets/style.css"> -->
+     <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #2c2f33;
+    color: white;
+    overflow: hidden;
+}
+
+.chat-container {
+    width: 100%;
+    max-width: 400px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #23272a;
+    border-radius: 8px;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.container-inicial,
+.container-form {
+    width: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    background-color: #2c2f33;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.container-inicial {
+    display: flex;
+}
+
+.container-input-inicial,
+.container-input {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.container-input-inicial input,
+.container-input input {
+    width: 80%;
+    padding: 10px;
+    background-color: #444b54;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    outline: none;
+}
+
+.container-input-inicial button,
+.container-input button {
+    width: 15%;
+    padding: 10px;
+    background-color: #7289da;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.container-input-inicial button:hover,
+.container-input button:hover {
+    background-color: #677bc4;
+}
+
+.container-form .response {
+    width: 100%;
+    max-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #444b54;
+    border-radius: 8px;
+}
+
+.response p {
+    align-self: flex-end;
+    background-color: #7289da;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.response span {
+    align-self: flex-start;
+    background-color: #2c2f33;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    color: #ffffff;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#recomecar {
+    padding: 10px;
+    background-color: #23272a;
+    color: white;
+    border-radius: 8px;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s;
+}
+
+#recomecar:hover {
+    background-color: #40444b;
+}
+     </style>
+    <title>Gemini ChatBot</title>
+</head>
+
+<body>
+    <div class="chat-container">
+        <button id="recomecar">Recomeçar?</button>
+
+        <div class="container-inicial">
+            <h2>Bem-vindo ao Gemini!</h2>
+            <p>Forneça um contexto inicial para a conversa:</p>
+            <div class="container-input-inicial">
+                <input type="text" placeholder="Escreva o contexto da conversa" id="contextControl" class="input-user-inicial">
+                <button class="input-user-inicial" id="inputButtonInical"><i class="bi bi-send"></i></button>
+            </div>
+        </div>
+
+        <div class="container-form">
+            <div class="chat-header">
+                <h1>Seu novo amigo, Gemini!</h1>
+            </div>
+            <div class="response"></div>
+            <div class="container-input">
+                <input type="text" placeholder="Digite sua mensagem..." id="userMessage" class="input-user">
+                <button class="input-user" id="inputButton"><i class="bi bi-send"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "@google/generative-ai": "https://esm.run/@google/generative-ai"
+            }
+        }
+    </script>
+    <script type="module">
+        let promptInicial = "";
+const buttonContext = document.getElementById("inputButtonInical");
+const contexto = document.getElementById("contextControl");
+const containerInicial = document.querySelector(".container-inicial");
+const containerForm = document.querySelector(".container-form");
+
+buttonContext.addEventListener("click", () => {
+    promptInicial = contexto.value.trim();
+    if (promptInicial === "") {
+        alert("O input não pode estar vazio!");
+    } else {
+        containerInicial.style.display = "none";
+        containerForm.style.display = "flex";
+    }
+});
+
+const inputUserMessage = document.getElementById("userMessage");
+const responses = document.querySelector(".response");
+const inputUserButton = document.getElementById("inputButton");
+const title = document.querySelector(".chat-header h1");
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+inputUserButton.addEventListener("click", () => {
+    if (inputUserMessage.value.trim() !== "") {
+        rodar();
+    } else {
+        alert("Digite uma mensagem para enviar!");
+    }
+});
+
+async function rodar() {
+    const API_KEY = "AIzaSyC0pg2z0Fl71agwGOWJ3wf1EJtFSObNp6M";
+    const genAI = new GoogleGenerativeAI(API_KEY);
+
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const prompt = inputUserMessage.value.trim();
+        const result = await model.generateContent(promptInicial + " " + prompt);
+        const response = result.response;
+
+        const inputData = document.createElement('p');
+        const mySpan = document.createElement('span');
+
+        inputData.textContent = prompt;
+        mySpan.textContent = response.candidates[0].content.parts[0].text;
+
+        responses.appendChild(inputData);
+        responses.appendChild(mySpan);
+        responses.style.display = "flex";
+        title.style.display = "none";
+
+        inputUserMessage.value = "";
+        inputUserMessage.focus();
+        responses.scrollTop = responses.scrollHeight;
+    } catch (error) {
+        console.error("Erro ao gerar conteúdo:", error);
+    }
+}
+
+const recomecar = document.getElementById("recomecar");
+recomecar.addEventListener("click", () => {
+    location.reload();
+});
+    </script>
+</body>
+
+</html>
