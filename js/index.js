@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 let promptInicial = "";
 const buttonContext = document.getElementById("inputButtonInical");
 const contexto = document.getElementById("contextControl");
@@ -52,8 +54,25 @@ async function rodar() {
         inputUserMessage.value = "";
         inputUserMessage.focus();
         responses.scrollTop = responses.scrollHeight;
+
+        // Enviar dados para o servidor
+        await enviarConversa(prompt, response.candidates[0].content.parts[0].text);
     } catch (error) {
         console.error("Erro ao gerar conteúdo:", error);
+    }
+}
+
+async function enviarConversa(mensagem, resposta) {
+    try {
+        const response = await axios.post('http://localhost:3000/api/conversas', {
+            usuario: 'usuario1',
+            mensagem: mensagem,
+            resposta: resposta
+        });
+
+        console.log('Dados enviados com sucesso para o servidor:', response.data);
+    } catch (error) {
+        console.error('Erro ao enviar dados:', error);
     }
 }
 
